@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AI Exam Proctoring System{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <script src="{% static 'js/alert_sound.js' %}"></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <a href="{% url 'monitoring:dashboard' %}" class="nav-brand">
+      <div class="pulse-indicator" id="ws-status-indicator"></div>
+      <span>AI EXAM PROCTOR</span>
+    </a>
+    <div style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+      <span>SYSTEM STATUS:</span>
+      <strong id="ws-status-text" style="color: var(--accent-green);">INITIALIZING</strong>
+    </div>
+    <div class="nav-links">
+      <a href="{% url 'monitoring:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Live Monitor</a>
+      <a href="{% url 'monitoring:incidents' %}" class="nav-link {% if request.resolver_match.url_name == 'incidents' %}active{% endif %}">Incident Logs</a>
+      <a href="{% url 'monitoring:students' %}" class="nav-link {% if request.resolver_match.url_name == 'students' %}active{% endif %}">Students</a>
+      <a href="{% url 'monitoring:camera_config' %}" class="nav-link {% if request.resolver_match.url_name == 'camera_config' %}active{% endif %}">Cameras</a>
+      <a href="/admin/" target="_blank" class="nav-link">Admin</a>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer style="text-align: center; padding: 1.5rem; font-size: 0.8rem; color: var(--text-secondary); border-top: 1px solid var(--border-color);">
+    Automated AI-Powered Exam Surveillance &bull; Edge-Capable ROI-Free Dynamic Vision &bull; 2026
+  </footer>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

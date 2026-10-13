@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Camera Setup - AI Exam Proctor{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div>
+    <h1 style="font-size: 1.5rem; font-weight: 700;">Camera Stream Configuration</h1>
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+      Register multi-camera feeds: Local USB Webcams, Network IP RTSP Cameras, or Benchmark Video Files.
+    </p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem;">
+  <!-- Add New Camera Form -->
+  <div class="video-panel" style="padding: 1.25rem;">
+    <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Add New Camera Source</h2>
+    <form method="post" style="display: flex; flex-direction: column; gap: 1rem;">
+      {% csrf_token %}
+      <div>
+        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">Camera Label</label>
+        <input type="text" name="name" placeholder="e.g. Lab-Front-Cam or USB-0" required
+               style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 6px;" />
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">Stream Source Type</label>
+        <select name="source_type" style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 6px;">
+          <option value="WEBCAM">Local USB / Built-in Webcam</option>
+          <option value="RTSP">Network IP Camera (RTSP)</option>
+          <option value="VIDEO_FILE">Test Video File (MP4/AVI)</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">Source URL / Device Index</label>
+        <input type="text" name="source_url" placeholder="0 (for default webcam) or rtsp://... or path/to/video.mp4" required
+               style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 6px;" />
+        <small style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 2px; display: block;">
+          Use '0' for built-in camera, or an RTSP URI like rtsp://admin:pass@ip:554/stream.
+        </small>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">Room / Hall Identifier</label>
+        <input type="text" name="room_number" value="Room 101" required
+               style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 6px;" />
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="margin-top: 8px; justify-content: center;">
+        Save & Register Camera
+      </button>
+    </form>
+  </div>
+
+  <!-- Registered Cameras Table -->
+  <div class="video-panel" style="overflow-x: auto;">
+    <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);">
+      <h2 style="font-size: 1.1rem; font-weight: 600;">Registered Camera Inventory</h2>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Source URI</th>
+          <th>Room</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cam in cameras %}
+        <tr>
+          <td style="font-weight: 600;">{{ cam.name }}</td>
+          <td><span class="badge badge-green">{{ cam.get_source_type_display }}</span></td>
+          <td style="font-family: monospace; font-size: 0.8rem; color: var(--accent-cyan);">{{ cam.source_url }}</td>
+          <td>{{ cam.room_number }}</td>
+          <td>
+            {% if cam.is_active %}
+            <span style="color: var(--accent-green); font-size: 0.85rem;">● Online</span>
+            {% else %}
+            <span style="color: var(--text-secondary); font-size: 0.85rem;">○ Offline</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+            No cameras registered yet. Add a camera feed using the form on the left.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

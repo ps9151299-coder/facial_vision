@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Incident Logs & Forensic Audit Trail{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div>
+    <h1 style="font-size: 1.5rem; font-weight: 700;">Forensic Incident Logs</h1>
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+      Audit-grade incident records with cryptographic SHA-256 signatures and proctor review status.
+    </p>
+  </div>
+  
+  <!-- Filter Controls -->
+  <form method="get" style="display: flex; gap: 10px;">
+    <select name="status" class="btn btn-outline" onchange="this.form.submit()">
+      <option value="">All Review Statuses</option>
+      {% for code, label in review_statuses %}
+      <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="type" class="btn btn-outline" onchange="this.form.submit()">
+      <option value="">All Violation Types</option>
+      {% for code, label in violation_types %}
+      <option value="{{ code }}" {% if type_filter == code %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<!-- Incident Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.5rem;">
+  {% for inc in page_obj %}
+  <div class="video-panel" style="padding: 1rem; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span class="badge {% if inc.review_status == 'CONFIRMED' %}badge-red{% elif inc.review_status == 'DISMISSED' %}badge-green{% else %}badge-orange{% endif %}" id="status-badge-{{ inc.id }}">
+        {{ inc.get_review_status_display }}
+      </span>
+      <small style="color: var(--text-secondary);">{{ inc.created_at|date:"Y-m-d H:i:s" }} UTC</small>
+    </div>
+
+    {% if inc.snapshot %}
+    <div style="position: relative; cursor: pointer;" onclick="openEvidenceModal('{{ inc.snapshot.url }}', '{{ inc.get_violation_type_display }}', '{{ inc.track_id }}', '{{ inc.snapshot_sha256 }}')">
+      <img src="{{ inc.snapshot.url }}" style="width: 100%; height: 220px; object-fit: cover; border-radius: 8px;" alt="Snapshot" />
+      <span style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.7); font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;">
+        🔍 Click to Inspect
+      </span>
+    </div>
+    {% else %}
+    <div style="height: 180px; background: #000; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 0.85rem;">
+      No snapshot captured
+    </div>
+    {% endif %}
+
+    <div>
+      <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff;">{{ inc.get_violation_type_display }}</h3>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+        Student Track #{{ inc.track_id }} &bull; Conf: <strong>{{ inc.confidence_score|floatformat:2 }}</strong> &bull; Duration: <strong>{{ inc.duration_seconds|floatformat:1 }}s</strong>
+      </div>
+      <div style="font-family: monospace; font-size: 0.7rem; color: #64748b; margin-top: 4px; word-break: break-all;">
+        SHA-256: {{ inc.snapshot_sha256|default:"N/A" }}
+      </div>
+    </div>
+
+    <!-- Review Form -->
+    <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
+      <input type="text" id="notes-{{ inc.id }}" placeholder="Optional notes for academic board..." 
+             value="{{ inc.notes }}" style="background: var(--bg-primary); border: 1px solid var(--border-color); color: white; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem;" />
+      
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-danger" style="flex: 1; padding: 4px 8px; font-size: 0.75rem;" onclick="reviewIncident('{{ inc.id }}', 'CONFIRMED')">
+          Confirm Violation
+        </button>
+        <button class="btn btn-success" style="flex: 1; padding: 4px 8px; font-size: 0.75rem;" onclick="reviewIncident('{{ inc.id }}', 'DISMISSED')">
+          Dismiss False Alarm
+        </button>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 0; color: var(--text-secondary);">
+    No incident records found matching your filters.
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div style="display: flex; justify-content: center; gap: 8px; margin-top: 2rem;">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&type={{ type_filter }}" class="btn btn-outline">&laquo; Previous</a>
+  {% endif %}
+  <span style="display: flex; align-items: center; padding: 0 1rem; color: var(--text-secondary); font-size: 0.85rem;">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&type={{ type_filter }}" class="btn btn-outline">Next &raquo;</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Evidence Modal Popup -->
+<div class="modal-backdrop" id="evidence-modal" onclick="closeEvidenceModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-title" style="font-size: 1.1rem; font-weight: 600;">Evidence Snapshot</h3>
+      <button onclick="closeEvidenceModal()" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">✕</button>
+    </div>
+    <div style="padding: 1rem;">
+      <img id="modal-img" src="" style="width: 100%; border-radius: 6px;" alt="High Resolution Snapshot" />
+      <div id="modal-sha256" style="margin-top: 8px; font-family: monospace; font-size: 0.75rem; color: var(--text-secondary); word-break: break-all;"></div>
+    </div>
+    <div style="padding: 0.75rem 1.25rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+      <button class="btn btn-outline" onclick="closeEvidenceModal()">Close</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/incidents.js' %}"></script>
+{% endblock %}

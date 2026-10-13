@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Control Room - Live AI Exam Proctor{% endblock %}
+
+{% block content %}
+<!-- Top Metrics Bar -->
+<div class="metrics-row">
+  <div class="metric-card info-card">
+    <span class="title">Active Session</span>
+    <span class="value" style="font-size: 1.4rem;">
+      {% if active_session %}{{ active_session.exam_name }}{% else %}General Surveillance{% endif %}
+    </span>
+    <small style="color: var(--text-secondary); margin-top: 4px;">
+      Room: {% if active_session %}{{ active_session.room_number }}{% else %}Room 101{% endif %}
+    </small>
+  </div>
+
+  <div class="metric-card alert-card">
+    <span class="title">Pending Reviews</span>
+    <span class="value" id="metric-pending-count" style="color: var(--accent-red);">{{ pending_reviews }}</span>
+    <small style="color: var(--text-secondary); margin-top: 4px;">Awaiting proctor confirmation</small>
+  </div>
+
+  <div class="metric-card warning-card">
+    <span class="title">Confirmed Violations</span>
+    <span class="value" style="color: var(--accent-orange);">{{ confirmed_violations }}</span>
+    <small style="color: var(--text-secondary); margin-top: 4px;">Flagged for academic board</small>
+  </div>
+
+  <div class="metric-card">
+    <span class="title">Total Incident Logs</span>
+    <span class="value" id="metric-total-count">{{ total_incidents }}</span>
+    <small style="color: var(--text-secondary); margin-top: 4px;">Debounced event records</small>
+  </div>
+</div>
+
+<!-- Main Split Grid: Video Stream + Dynamic Cards on Left, Real-time Incident Feed on Right -->
+<div class="dashboard-grid">
+  <!-- Left Side: Video & Telemetry -->
+  <div>
+    <div class="video-panel">
+      <div class="video-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h2 style="font-size: 1.1rem; font-weight: 600;">Main Examination Stream</h2>
+          <span style="font-size: 0.75rem; color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--accent-cyan);">
+            ROI-Free Dynamic Tracking Active
+          </span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary" onclick="toggleStream('start')">Start Camera</button>
+          <button class="btn btn-outline" onclick="toggleStream('stop')">Stop Camera</button>
+          <button class="btn btn-outline" id="mute-btn" onclick="toggleSound()">Mute Chime</button>
+        </div>
+      </div>
+
+      <!-- Live Stream Container -->
+      <div class="video-feed-container">
+        <div class="live-badge">● LIVE CV INGESTION</div>
+        <img id="live-stream-img" src="{% url 'monitoring:video_feed' camera_id='default' %}" alt="Live Camera Feed" />
+      </div>
+    </div>
+
+    <!-- Dynamic Students Live Status Cards -->
+    <div class="students-telemetry-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem;">
+        <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-secondary);">
+          Dynamic Seated Student Telemetry (Auto-Discovered Tracks)
+        </h3>
+        <span style="font-size: 0.75rem; color: var(--text-secondary);">Ego-Centric 3D Face Mesh & Iris Tracking</span>
+      </div>
+      <div class="students-cards-grid" id="students-cards-container">
+        <!-- Dynamically populated via WebSocket telemetry_update -->
+        <div class="student-card normal" id="student-card-placeholder">
+          <div style="font-size: 0.85rem; font-weight: 600;">Awaiting Video Feed...</div>
+          <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
+            Start camera to track students anywhere in the room.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Real-time Incident Feed -->
+  <div class="incident-feed-panel">
+    <div class="feed-header">
+      <h3 style="font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+        <span>🚨 Real-Time Violation Feed</span>
+      </h3>
+      <span class="badge badge-red" style="font-size: 0.7rem;">Live WebSocket</span>
+    </div>
+
+    <div class="feed-list" id="incident-feed-list">
+      {% for inc in recent_incidents %}
+      <div class="incident-card" style="border-left: 4px solid {% if inc.review_status == 'CONFIRMED' %}var(--accent-red){% elif inc.review_status == 'DISMISSED' %}var(--accent-green){% else %}var(--accent-orange){% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="badge {% if inc.review_status == 'CONFIRMED' %}badge-red{% else %}badge-orange{% endif %}">
+            {{ inc.get_violation_type_display }}
+          </span>
+          <small style="color: var(--text-secondary);">{{ inc.created_at|date:"H:i:s" }} UTC</small>
+        </div>
+
+        <div style="font-size: 0.9rem; font-weight: 600; margin-top: 4px;">
+          Track #{{ inc.track_id }} &bull; Conf: {{ inc.confidence_score|floatformat:2 }} &bull; {{ inc.duration_seconds|floatformat:1 }}s
+        </div>
+
+        {% if inc.snapshot %}
+        <div style="margin-top: 6px;">
+          <img src="{{ inc.snapshot.url }}" style="width: 100%; border-radius: 6px; cursor: pointer;" 
+               onclick="openEvidenceModal('{{ inc.snapshot.url }}', '{{ inc.get_violation_type_display }}', '{{ inc.track_id }}', '{{ inc.snapshot_sha256 }}')"
+               alt="Incident Snapshot" />
+        </div>
+        {% endif %}
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+          <span class="badge {% if inc.review_status == 'CONFIRMED' %}badge-red{% elif inc.review_status == 'DISMISSED' %}badge-green{% else %}badge-orange{% endif %}" id="status-badge-{{ inc.id }}" style="font-size: 0.65rem;">
+            {{ inc.get_review_status_display }}
+          </span>
+          <a href="{% url 'monitoring:incidents' %}" class="btn btn-outline" style="padding: 2px 8px; font-size: 0.7rem;">Review</a>
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align: center; color: var(--text-secondary); padding: 2rem 0; font-size: 0.85rem;" id="no-incidents-msg">
+        No active violations detected. Surveillance nominal.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Evidence Modal Popup -->
+<div class="modal-backdrop" id="evidence-modal" onclick="closeEvidenceModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-title" style="font-size: 1.1rem; font-weight: 600;">Evidence Snapshot</h3>
+      <button onclick="closeEvidenceModal()" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">✕</button>
+    </div>
+    <div style="padding: 1rem;">
+      <img id="modal-img" src="" style="width: 100%; border-radius: 6px;" alt="High Resolution Snapshot" />
+      <div id="modal-sha256" style="margin-top: 8px; font-family: monospace; font-size: 0.75rem; color: var(--text-secondary); word-break: break-all;"></div>
+    </div>
+    <div style="padding: 0.75rem 1.25rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+      <button class="btn btn-outline" onclick="closeEvidenceModal()">Close</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+<script src="{% static 'js/incidents.js' %}"></script>
+<script>
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('mute-btn');
+    if (btn) {
+      btn.textContent = soundEnabled ? 'Mute Chime' : 'Unmute Chime';
+      btn.style.borderColor = soundEnabled ? 'var(--border-color)' : 'var(--accent-red)';
+    }
+  }
+</script>
+{% endblock %}

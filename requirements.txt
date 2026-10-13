@@ -1,0 +1,17 @@
+# Django Core & Real-time WebSockets
+django>=5.0,<5.2
+channels>=4.0.0,<5.0.0
+daphne>=4.0.0,<5.0.0
+channels-redis>=4.2.0
+
+# Computer Vision & Deep Learning
+numpy>=1.26.0,<2.0.0
+opencv-python>=4.8.0
+ultralytics>=8.1.0
+mediapipe>=0.10.9
+supervision>=0.18.0
+pillow>=10.0.0
+
+# Task Execution & Utilities
+requests>=2.31.0
+python-dotenv>=1.0.0
