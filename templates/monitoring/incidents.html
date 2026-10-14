@@ -13,33 +13,43 @@
     </p>
   </div>
   
-  <!-- Filter Controls -->
-  <form method="get" style="display: flex; gap: 10px;">
-    <select name="status" class="btn btn-outline" onchange="this.form.submit()">
-      <option value="">All Review Statuses</option>
-      {% for code, label in review_statuses %}
-      <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
+  <!-- Filter Controls & Bulk Delete -->
+  <div style="display: flex; gap: 10px; align-items: center;">
+    <button class="btn btn-outline" style="color: var(--accent-red); border-color: var(--accent-red); padding: 6px 12px; font-size: 0.8rem;" onclick="deleteAllIncidents()">
+      🗑️ Clear All Snapshots
+    </button>
+    <form method="get" style="display: flex; gap: 10px;">
+      <select name="status" class="btn btn-outline" onchange="this.form.submit()">
+        <option value="">All Review Statuses</option>
+        {% for code, label in review_statuses %}
+        <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
 
-    <select name="type" class="btn btn-outline" onchange="this.form.submit()">
-      <option value="">All Violation Types</option>
-      {% for code, label in violation_types %}
-      <option value="{{ code }}" {% if type_filter == code %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
-  </form>
+      <select name="type" class="btn btn-outline" onchange="this.form.submit()">
+        <option value="">All Violation Types</option>
+        {% for code, label in violation_types %}
+        <option value="{{ code }}" {% if type_filter == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
 </div>
 
 <!-- Incident Grid -->
 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.5rem;">
   {% for inc in page_obj %}
-  <div class="video-panel" style="padding: 1rem; display: flex; flex-direction: column; gap: 10px;">
+  <div class="video-panel" id="incident-card-{{ inc.id }}" style="padding: 1rem; display: flex; flex-direction: column; gap: 10px;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <span class="badge {% if inc.review_status == 'CONFIRMED' %}badge-red{% elif inc.review_status == 'DISMISSED' %}badge-green{% else %}badge-orange{% endif %}" id="status-badge-{{ inc.id }}">
         {{ inc.get_review_status_display }}
       </span>
-      <small style="color: var(--text-secondary);">{{ inc.created_at|date:"Y-m-d H:i:s" }} UTC</small>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <small style="color: var(--text-secondary);">{{ inc.created_at|date:"Y-m-d H:i:s" }} UTC</small>
+        <button style="background: none; border: none; cursor: pointer; color: var(--accent-red); font-size: 0.9rem;" title="Delete this snapshot" onclick="deleteIncident('{{ inc.id }}')">
+          🗑️
+        </button>
+      </div>
     </div>
 
     {% if inc.snapshot %}

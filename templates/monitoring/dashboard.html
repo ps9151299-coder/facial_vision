@@ -47,7 +47,14 @@
             ROI-Free Dynamic Tracking Active
           </span>
         </div>
-        <div style="display: flex; gap: 8px;">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <select id="camera-select" style="background: var(--bg-primary); color: white; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 10px; font-size: 0.8rem;">
+            {% for cam in cameras %}
+              <option value="{{ cam.source_url }}" data-cam-id="{{ cam.id }}">{{ cam.name }} ({{ cam.source_url }})</option>
+            {% empty %}
+              <option value="0" data-cam-id="default">Webcam 0</option>
+            {% endfor %}
+          </select>
           <button class="btn btn-primary" onclick="toggleStream('start')">Start Camera</button>
           <button class="btn btn-outline" onclick="toggleStream('stop')">Stop Camera</button>
           <button class="btn btn-outline" id="mute-btn" onclick="toggleSound()">Mute Chime</button>
@@ -55,9 +62,14 @@
       </div>
 
       <!-- Live Stream Container -->
-      <div class="video-feed-container">
+      <div class="video-feed-container" style="position: relative;">
         <div class="live-badge">● LIVE CV INGESTION</div>
-        <img id="live-stream-img" src="{% url 'monitoring:video_feed' camera_id='default' %}" alt="Live Camera Feed" />
+        <img id="live-stream-img" src="" alt="Live Camera Feed" style="display:none; width:100%; height:100%; object-fit:cover;" />
+        <div id="stream-placeholder" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; min-height:320px; background:#1a1a2e; flex-direction:column; gap:12px;">
+          <div style="font-size:3rem;">📷</div>
+          <div style="color:#888; font-size:0.95rem; font-weight:600;">Camera Offline</div>
+          <div style="color:#555; font-size:0.8rem;">Click <strong style="color:#06b6d4;">Start Camera</strong> to begin live stream</div>
+        </div>
       </div>
     </div>
 
@@ -92,7 +104,7 @@
 
     <div class="feed-list" id="incident-feed-list">
       {% for inc in recent_incidents %}
-      <div class="incident-card" style="border-left: 4px solid {% if inc.review_status == 'CONFIRMED' %}var(--accent-red){% elif inc.review_status == 'DISMISSED' %}var(--accent-green){% else %}var(--accent-orange){% endif %};">
+      <div class="incident-card" id="feed-incident-{{ inc.id }}" data-incident-id="{{ inc.id }}" style="border-left: 4px solid {% if inc.review_status == 'CONFIRMED' %}var(--accent-red){% elif inc.review_status == 'DISMISSED' %}var(--accent-green){% else %}var(--accent-orange){% endif %};">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span class="badge {% if inc.review_status == 'CONFIRMED' %}badge-red{% else %}badge-orange{% endif %}">
             {{ inc.get_violation_type_display }}

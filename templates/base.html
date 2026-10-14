@@ -24,7 +24,7 @@
     <div class="nav-links">
       <a href="{% url 'monitoring:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Live Monitor</a>
       <a href="{% url 'monitoring:incidents' %}" class="nav-link {% if request.resolver_match.url_name == 'incidents' %}active{% endif %}">Incident Logs</a>
-      <a href="{% url 'monitoring:students' %}" class="nav-link {% if request.resolver_match.url_name == 'students' %}active{% endif %}">Students</a>
+      <a href="{% url 'monitoring:cheating_report' %}" class="nav-link {% if request.resolver_match.url_name == 'cheating_report' %}active{% endif %}" style="color: var(--accent-red); font-weight: 700;">Cheating Report</a>
       <a href="{% url 'monitoring:camera_config' %}" class="nav-link {% if request.resolver_match.url_name == 'camera_config' %}active{% endif %}">Cameras</a>
       <a href="/admin/" target="_blank" class="nav-link">Admin</a>
     </div>

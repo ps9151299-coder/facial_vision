@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Examination Cheating & Forensic Evidence Report{% endblock %}
+
+{% block content %}
+<!-- Action Header -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <!-- 1. Report Title -->
+    <h1 style="font-size: 1.6rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 10px;">
+      <span>🚨 Examination Cheating & Forensic Evidence Report</span>
+    </h1>
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+      Official Academic Integrity Surveillance Dossier &bull; Captures candidates who attempted cheating with up to 5 capped evidence snapshots.
+    </p>
+  </div>
+
+  <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+    <form method="get" style="display: flex; gap: 8px; align-items: center;">
+      <label style="font-size: 0.8rem; color: var(--text-secondary);">Show:</label>
+      <select name="threshold" class="btn btn-outline" style="padding: 6px 10px; font-size: 0.8rem;" onchange="this.form.submit()">
+        <option value="1" {% if threshold == 1 %}selected{% endif %}>All Students Who Cheated (1+ Violations)</option>
+        <option value="3" {% if threshold == 3 %}selected{% endif %}>Repeat Offenders (3+ Violations)</option>
+        <option value="5" {% if threshold == 5 %}selected{% endif %}>Confirmed Cheaters Only (5/5 Violations)</option>
+      </select>
+    </form>
+
+    <!-- Download Buttons -->
+    <a href="{% url 'monitoring:download_cheating_report' %}?threshold={{ threshold }}" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; padding: 7px 14px; text-decoration: none;">
+      <span>📥</span> <strong>Download Report (.html)</strong>
+    </a>
+    <button class="btn btn-outline" onclick="window.print()" style="font-size: 0.85rem; padding: 7px 14px;">
+      🖨️ Print / Save as PDF
+    </button>
+  </div>
+</div>
+
+<!-- Executive Insights Summary Bar -->
+<div class="video-panel" style="padding: 1.25rem; margin-bottom: 2rem;">
+  <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--accent-cyan); letter-spacing: 0.5px; margin-bottom: 10px;">
+    Executive Cheating Insights & Session Telemetry
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+    <div style="background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color);">
+      <span style="color: var(--text-secondary); font-size: 0.75rem; display: block;">Exam Session</span>
+      <strong style="color: #ffffff; font-size: 0.95rem;">{% if session %}{{ session.exam_name }}{% else %}General Surveillance{% endif %}</strong>
+      <small style="color: var(--text-secondary); display: block; font-size: 0.75rem;">Room: {% if session %}{{ session.room_number }}{% else %}Room 101{% endif %}</small>
+    </div>
+
+    <div style="background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color);">
+      <span style="color: var(--text-secondary); font-size: 0.75rem; display: block;">Students Flagged for Cheating</span>
+      <strong style="color: var(--accent-red); font-size: 1.25rem;">{{ total_flagged_students }} Student(s)</strong>
+    </div>
+
+    <div style="background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color);">
+      <span style="color: var(--text-secondary); font-size: 0.75rem; display: block;">Confirmed Cheaters (5/5 Limit)</span>
+      <strong style="color: var(--accent-orange); font-size: 1.25rem;">{{ confirmed_cheaters_count }} Candidate(s)</strong>
+    </div>
+
+    <div style="background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color);">
+      <span style="color: var(--text-secondary); font-size: 0.75rem; display: block;">Total Forensic Snapshots</span>
+      <strong style="color: var(--accent-cyan); font-size: 1.25rem;">{{ total_incidents_count }} Snaps</strong>
+    </div>
+
+    <div style="background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color);">
+      <span style="color: var(--text-secondary); font-size: 0.75rem; display: block;">Most Common Cheating Method</span>
+      <strong style="color: #ffffff; font-size: 0.85rem;">{{ top_violation_name }}</strong>
+    </div>
+  </div>
+</div>
+
+{% for cand in candidates %}
+<!-- Student Cheating Dossier Card -->
+<div class="video-panel" style="margin-bottom: 2.5rem; border-left: 6px solid {% if cand.is_confirmed %}var(--accent-red){% else %}var(--accent-orange){% endif %}; padding: 0; overflow: hidden;">
+  
+  <!-- 2. Student ID Header -->
+  <div style="background: {% if cand.is_confirmed %}rgba(239, 68, 68, 0.15){% else %}rgba(249, 115, 22, 0.12){% endif %}; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.3rem;">👤</span>
+        <h2 style="font-size: 1.2rem; font-weight: 700; color: #ffffff;">
+          {{ cand.name }} <span style="font-weight: 400; color: var(--text-secondary); font-size: 0.95rem;">({{ cand.roll_number }})</span>
+        </h2>
+      </div>
+      <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px; margin-left: 32px;">
+        Student ID: <strong style="color: #ffffff;">{{ cand.student_id }}</strong> &bull;
+        Dynamic Tracking ID: <strong style="color: var(--accent-cyan);">Track #{{ cand.track_id }}</strong>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span class="badge badge-cyan" style="font-size: 0.75rem;">Avg Conf: {{ cand.avg_conf }}%</span>
+      <span class="badge {% if cand.is_confirmed %}badge-red{% else %}badge-orange{% endif %}" style="font-size: 0.8rem; padding: 5px 10px;">
+        {% if cand.is_confirmed %}🚨{% else %}⚠️{% endif %} {{ cand.status_label }}
+      </span>
+    </div>
+  </div>
+
+  <div style="padding: 1.5rem;">
+    <!-- 3. Which Type of Cheating He Tried -->
+    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1.5rem;">
+      <div style="font-size: 0.85rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+        <span>🔍 Cheating Attempted by this Student:</span>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">
+        {% for v_item in cand.violation_types_list %}
+        <div style="background: #0f172a; border: 1px solid var(--border-color); border-left: 3px solid var(--accent-red); padding: 6px 12px; border-radius: 4px; font-size: 0.82rem; display: flex; align-items: center; gap: 8px;">
+          <span style="color: #ffffff; font-weight: 600;">{{ v_item.label }}</span>
+          <span class="badge badge-red" style="font-size: 0.7rem; padding: 2px 6px;">{{ v_item.count }} time(s)</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="margin-top: 12px; color: var(--text-secondary); font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+        Recorded Timeframe: <strong>{{ cand.first_seen|date:"H:i:s" }} UTC</strong> &rarr; <strong>{{ cand.last_seen|date:"H:i:s" }} UTC</strong> &bull; Total Evidence Captured: <strong>{{ cand.snapshots|length }} of 5 max capped snapshots</strong>
+      </div>
+    </div>
+
+    <!-- 4. Below: Their Snapshots -->
+    <div style="font-size: 0.9rem; font-weight: 700; margin-bottom: 12px; color: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+      <span>📸 Forensic Evidence Snapshots (Below):</span>
+      <small style="color: var(--text-secondary); font-weight: 400; font-size: 0.75rem;">Click photo to inspect full resolution</small>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.25rem;">
+      {% for snap in cand.snapshots %}
+      <div style="background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column;">
+        {% if snap.snapshot %}
+        <div style="position: relative; cursor: pointer;" onclick="openEvidenceModal('{{ snap.snapshot.url }}', '{{ snap.get_violation_type_display }}', '{{ cand.track_id }}', '{{ snap.snapshot_sha256 }}')">
+          <img src="{{ snap.snapshot.url }}" 
+               style="width: 100%; height: 160px; object-fit: cover; display: block;" 
+               alt="Evidence #{{ forloop.counter }}" />
+          <span style="position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 3px;">
+            Snap #{{ forloop.counter }}
+          </span>
+        </div>
+        {% else %}
+        <div style="height: 160px; background: #111; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.8rem;">
+          No Photo File
+        </div>
+        {% endif %}
+
+        <div style="padding: 0.75rem; font-size: 0.75rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 700; color: #fff; margin-bottom: 4px;">
+              {{ snap.get_violation_type_display }}
+            </div>
+            <div style="color: var(--text-secondary); line-height: 1.4;">
+              Time: {{ snap.created_at|date:"H:i:s" }} UTC<br>
+              Confidence: <strong>{{ snap.confidence_score|floatformat:2 }}</strong> &bull; {{ snap.duration_seconds|floatformat:1 }}s
+            </div>
+          </div>
+          {% if snap.snapshot_sha256 %}
+          <div style="font-family: monospace; font-size: 0.65rem; color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1); padding: 3px 6px; border-radius: 3px; margin-top: 6px; word-break: break-all;" title="Cryptographic SHA-256 Signature">
+            SHA: {{ snap.snapshot_sha256|slice:":16" }}...
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% empty %}
+<div class="video-panel" style="text-align: center; padding: 3.5rem 1.5rem;">
+  <div style="font-size: 3.5rem; margin-bottom: 1rem;">🛡️</div>
+  <h2 style="font-size: 1.3rem; font-weight: 700; color: #ffffff;">No Cheating Incidents Detected</h2>
+  <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 6px; max-width: 500px; margin-left: auto; margin-right: auto;">
+    Examination surveillance is nominal. As soon as any student attempts cheating, their identity, cheating type, and photographic evidence will appear here for download.
+  </p>
+  <div style="margin-top: 1.5rem;">
+    <a href="{% url 'monitoring:dashboard' %}" class="btn btn-primary">Go to Live Monitor</a>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Evidence Modal Popup -->
+<div class="modal-backdrop" id="evidence-modal" onclick="closeEvidenceModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-title" style="font-size: 1.1rem; font-weight: 600;">Evidence Snapshot</h3>
+      <button onclick="closeEvidenceModal()" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">✕</button>
+    </div>
+    <div style="padding: 1rem;">
+      <img id="modal-img" src="" style="width: 100%; border-radius: 6px;" alt="High Resolution Snapshot" />
+      <div id="modal-sha256" style="margin-top: 8px; font-family: monospace; font-size: 0.75rem; color: var(--text-secondary); word-break: break-all;"></div>
+    </div>
+    <div style="padding: 0.75rem 1.25rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+      <button class="btn btn-outline" onclick="closeEvidenceModal()">Close</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/incidents.js' %}"></script>
+{% endblock %}

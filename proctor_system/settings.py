@@ -19,7 +19,11 @@ ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
-    'daphne',  # Daphne must be before django.contrib.staticfiles for ASGI Channels
+    # NOTE: 'daphne' intentionally NOT listed here so that `manage.py runserver`
+    # uses the standard WSGI server, which correctly supports long-lived
+    # StreamingHttpResponse (MJPEG). Daphne kills streaming connections.
+    # To use WebSockets, run Daphne separately:
+    #   daphne -p 8001 proctor_system.asgi:application
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

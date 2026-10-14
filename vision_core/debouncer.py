@@ -7,7 +7,7 @@ class TemporalDebounceEngine:
     Suppresses momentary false alarms (stretching, blinking, sneezing, turning briefly)
     by requiring sustained violation across a sliding temporal buffer.
     """
-    def __init__(self, window_size=45, suspicion_threshold=0.75, cooldown_seconds=15.0):
+    def __init__(self, window_size=20, suspicion_threshold=0.60, cooldown_seconds=10.0):
         self.window_size = window_size
         self.suspicion_threshold = suspicion_threshold
         self.cooldown_seconds = cooldown_seconds
@@ -72,9 +72,9 @@ class TemporalDebounceEngine:
                 if key in self.active_start_times and sum(self.buffers[key]) == 0:
                     del self.active_start_times[key]
 
-            # Calculate suspicion ratio S
+            # Calculate suspicion ratio
             buf = self.buffers[key]
-            if len(buf) >= int(self.window_size * 0.5): # Wait until at least half-full
+            if len(buf) >= 3:   # At least 3 AI-inference frames before evaluating
                 suspicion_ratio = sum(buf) / len(buf)
                 if suspicion_ratio >= self.suspicion_threshold:
                     last_alert = self.cooldowns.get(key, 0)

@@ -53,3 +53,56 @@ function reviewIncident(incidentId, status) {
   })
   .catch(err => console.error('Error submitting review:', err));
 }
+
+function deleteIncident(incidentId) {
+  if (!confirm('Are you sure you want to permanently delete this snapshot and audit record?')) {
+    return;
+  }
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+  fetch(`/incidents/${incidentId}/delete/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrfToken
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      const card = document.getElementById(`incident-card-${incidentId}`);
+      if (card) {
+        card.style.transition = 'all 0.3s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.9)';
+        setTimeout(() => card.remove(), 300);
+      }
+    } else {
+      alert('Error deleting incident: ' + (data.error || 'Unknown error'));
+    }
+  })
+  .catch(err => console.error('Error deleting incident:', err));
+}
+
+function deleteAllIncidents() {
+  if (!confirm('WARNING: Are you sure you want to delete ALL captured snapshots and incident logs? This action cannot be undone.')) {
+    return;
+  }
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+  fetch('/incidents/delete-all/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrfToken
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert(`Successfully deleted ${data.deleted_count} incident snapshot(s).`);
+      window.location.reload();
+    } else {
+      alert('Error deleting incidents: ' + (data.error || 'Unknown error'));
+    }
+  })
+  .catch(err => console.error('Error in bulk delete:', err));
+}

@@ -1,8 +1,88 @@
+# ==========================================
+# Python & Bytecode
+# ==========================================
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==========================================
+# Virtual Environments
+# ==========================================
 .venv/
 venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.cert
+
+# ==========================================
+# Databases & SQLite
+# ==========================================
 *.sqlite3
 db.sqlite3
-.env
+*.db
+
+# ==========================================
+# AI / ML Model Weights & Large Binaries
+# (Ultralytics and MediaPipe auto-download on first run)
+# ==========================================
+*.pt
+*.task
+*.onnx
+*.engine
+*.weights
+*.bin
+*.part
+
+# ==========================================
+# Media Files & Captured Snapshots
+# (Keep folder structure via .gitkeep)
+# ==========================================
+media/*
+!media/.gitkeep
+snapshots/
+
+# ==========================================
+# Generated Cheating Audit Reports
+# ==========================================
+reports/*
+!reports/.gitkeep
+
+# ==========================================
+# Static Files (Production Collectstatic)
+# ==========================================
+staticfiles/
+
+# ==========================================
+# Temporary Debug Images & Logs
+# ==========================================
+*.log
+debug_cam.jpg
+test_*.jpg
+test_*.png
+*.tmp
+
+# ==========================================
+# IDE & System Files
+# ==========================================
 .vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
